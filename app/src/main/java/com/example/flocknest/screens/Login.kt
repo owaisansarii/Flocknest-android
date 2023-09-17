@@ -1,6 +1,8 @@
 package com.example.flocknest.screens
 
 import android.graphics.drawable.Icon
+import android.util.Log
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,10 +14,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,18 +40,25 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.flocknest.Routes
+import com.example.flocknest.data.repositories.UserRepository
+import com.example.flocknest.data.viewmodels.UserViewModel
 import com.example.flocknest.ui.theme.Purple40
 
+data class ErrorState(var type: String = "none", var message: String = "")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginPage(navController: NavHostController){
+    val viewModel: UserViewModel = viewModel()
+    val user = viewModel.loginResult.observeAsState()
     val username = remember {
         mutableStateOf(TextFieldValue())
     }
@@ -59,6 +70,25 @@ fun LoginPage(navController: NavHostController){
     var passwordVisible by remember {
         mutableStateOf(false)
     }
+
+    var error by remember { mutableStateOf("") }
+
+    fun validatePassword(password: String){
+        var errorState = when{
+            password.isEmpty() -> ErrorState("empty", "Password cannot be empty")
+            password.length < 8 -> ErrorState("length", "Password must be at least 8 characters")
+            else -> ErrorState()
+        }
+        val regex = Regex(pattern = "[A-Za-z0-9]+")
+        val isValid = regex.matches(input = password)
+        if (!isValid){
+            errorState.message = "Password must only contain letters and numbers"
+            errorState.type = "invalid"
+        }
+        error = errorState.message
+    }
+
+
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -89,11 +119,25 @@ fun LoginPage(navController: NavHostController){
             TextField(
                 visualTransformation= if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 value = password.value,
-                onValueChange = {password.value =it},
+                onValueChange = {
+                    password.value =it
+                    validatePassword(it.text)
+
+                                },
                 label = { Text(text = "Password")},
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
+                supportingText = {
+                    if (error.isNotEmpty()) {
+                        Text(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = error,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                isError = error.isNotEmpty(),
                 trailingIcon = {
                     val image = if (passwordVisible){
                         Icons.Filled.Visibility
@@ -111,7 +155,8 @@ fun LoginPage(navController: NavHostController){
             Box(modifier = Modifier.padding(40.dp,0.dp,40.dp,0.dp)) {
                 Button(
                     shape = RoundedCornerShape(50.dp),
-                    onClick = {}, modifier = Modifier
+                    onClick = {},
+                    modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
                 ) {
@@ -120,6 +165,10 @@ fun LoginPage(navController: NavHostController){
             }
             Spacer(modifier = Modifier.height(20.dp))
             ClickableText(text = AnnotatedString("Forgot Password?"), onClick = {navController.navigate(Routes.ForgotPassword.route)}, style = TextStyle(fontSize = 14.sp, fontFamily = FontFamily.Default))
+//            show user data
+            user.value?.let {
+                Text(text = it.toString())
+            }
         }
     }
 }
