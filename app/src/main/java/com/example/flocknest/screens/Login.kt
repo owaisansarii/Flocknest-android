@@ -59,6 +59,10 @@ data class ErrorState(var type: String = "none", var message: String = "")
 fun LoginPage(navController: NavHostController){
     val viewModel: UserViewModel = viewModel()
     val user = viewModel.loginResult.observeAsState()
+//    print user when it changes
+    user.value?.let {
+        Log.d("User", it.toString())
+    }
     val username = remember {
         mutableStateOf(TextFieldValue())
     }
@@ -74,7 +78,7 @@ fun LoginPage(navController: NavHostController){
     var error by remember { mutableStateOf("") }
 
     fun validatePassword(password: String){
-        var errorState = when{
+        val errorState = when{
             password.isEmpty() -> ErrorState("empty", "Password cannot be empty")
             password.length < 8 -> ErrorState("length", "Password must be at least 8 characters")
             else -> ErrorState()
@@ -88,7 +92,9 @@ fun LoginPage(navController: NavHostController){
         error = errorState.message
     }
 
-
+    fun login(){
+        viewModel.login(username.value.text, password.value.text)
+    }
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -155,7 +161,7 @@ fun LoginPage(navController: NavHostController){
             Box(modifier = Modifier.padding(40.dp,0.dp,40.dp,0.dp)) {
                 Button(
                     shape = RoundedCornerShape(50.dp),
-                    onClick = {},
+                    onClick = {login()},
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)

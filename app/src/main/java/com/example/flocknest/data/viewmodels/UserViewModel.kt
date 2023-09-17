@@ -17,7 +17,14 @@ class UserViewModel: ViewModel() {
         viewModelScope.launch {
             try {
                 val result = repository.login(username, password)
-                _loginResult.postValue(result)
+                val user = result.getOrNull()
+                if (user != null) {
+                    println("User: $user")
+                    _loginResult.postValue(Result.success(user))
+                } else {
+
+                    _loginResult.postValue(Result.failure(Exception("Invalid username or password")))
+                }
             } catch (e: Exception) {
                 _loginResult.postValue(Result.failure(e))
             }

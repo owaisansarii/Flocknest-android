@@ -5,7 +5,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitHelper {
-    private const val BASE_URL = "https://flocknest.herokuapp.com/api/v1/"
+    private const val BASE_URL = "https://6098-36-255-87-182.ngrok.io/"
     private val retrofit: Retrofit
     init {
         val gson = GsonBuilder()
